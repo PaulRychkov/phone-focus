@@ -1,0 +1,15 @@
+.gradle/
+build/
+node_modules/
+local.properties
+keystore.properties
+*.iml
+.idea/
+.kotlin/
+*.keystore
+*.jks
+*.apk
+android/app/libs/*.aar
+android/app/libs/*.jar
+android/app/src/main/assets/
+state/

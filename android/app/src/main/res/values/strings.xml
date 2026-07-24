@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Focus</string>
+    <string name="channel_name">Сбор статистики</string>
+    <string name="notif_title">Focus следит за использованием</string>
+    <string name="notif_text">Замер раз в 10 минут</string>
+</resources>

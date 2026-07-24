@@ -1,0 +1,2 @@
+-keep class focus.** { *; }
+-keep class go.** { *; }
