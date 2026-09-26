@@ -9,7 +9,9 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.widget.FrameLayout
 import focus.Focus
 import org.json.JSONObject
 
@@ -25,10 +27,20 @@ class MainActivity : Activity() {
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            settings.textZoom = 100
+            webChromeClient = WebChromeClient()
             addJavascriptInterface(Bridge(), "Bridge")
             loadDataWithBaseURL("file:///android_asset/", html, "text/html", "utf-8", null)
         }
-        setContentView(web)
+        val root = FrameLayout(this).apply { fitsSystemWindows = true }
+        root.addView(
+            web,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        setContentView(root)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)

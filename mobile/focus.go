@@ -73,11 +73,28 @@ func Configure(url, accessToken, device string, chat int64, dataDir string) erro
 }
 
 func Push(rawEvents string, appInfoJSON string, windowSeconds int64, nowMillis int64) error {
+	snapshot, sender, box, err := prepare(rawEvents, appInfoJSON, windowSeconds, nowMillis)
+	if err != nil {
+		return err
+	}
+
+	var sendErr error
+	if sender.Configured() {
+		_, sendErr = box.Flush(sender.Send)
+	}
+
+	mu.Lock()
+	summary = describe(snapshot, box.Size(), sender.Configured(), sendErr)
+	mu.Unlock()
+	return sendErr
+}
+
+func prepare(rawEvents string, appInfoJSON string, windowSeconds int64, nowMillis int64) (usage.Snapshot, *publish.Sender, *publish.Outbox, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if outbox == nil {
-		return fmt.Errorf("библиотека не настроена")
+		return usage.Snapshot{}, nil, nil, fmt.Errorf("библиотека не настроена")
 	}
 
 	now := time.Now()
@@ -104,7 +121,7 @@ func Push(rawEvents string, appInfoJSON string, windowSeconds int64, nowMillis i
 	current.Seq = snapshot.Seq
 	current.LastSignature = result.Signature
 	if err := state.Save(statePath, current); err != nil {
-		return err
+		return usage.Snapshot{}, nil, nil, err
 	}
 
 	if data, err := json.Marshal(snapshot); err == nil {
@@ -115,21 +132,14 @@ func Push(rawEvents string, appInfoJSON string, windowSeconds int64, nowMillis i
 		id := uuid.NewString()
 		payload, err := publish.Marshal(id, deviceID, now, snapshot)
 		if err != nil {
-			return err
+			return usage.Snapshot{}, nil, nil, err
 		}
 		if err := outbox.Enqueue(snapshot.Seq, id, payload); err != nil {
-			return err
+			return usage.Snapshot{}, nil, nil, err
 		}
 	}
 
-	sender := publish.NewSender(baseURL, token)
-	var sendErr error
-	if sender.Configured() {
-		_, sendErr = outbox.Flush(sender.Send)
-	}
-
-	summary = describe(snapshot, outbox.Size(), sender.Configured(), sendErr)
-	return sendErr
+	return snapshot, publish.NewSender(baseURL, token), outbox, nil
 }
 
 func Summary() string {
